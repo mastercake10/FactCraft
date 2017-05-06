@@ -1,0 +1,403 @@
+
+<html>
+<head>
+	<link rel="stylesheet" href="css/bootstrap.min.css">
+	<link rel="stylesheet" href="css/slider.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+	<script src="html2canvas.js"></script>
+	<script src="js/bootstrap-slider.js"></script>
+	<script>
+
+	var raw = '{"elements":[{"id":1,"img":"http://fs5.directupload.net/images/161207/fvrvltc5.png","x":"20","y":"20","size":"117","center":false},{"id":2,"img":"http://fs5.directupload.net/images/161208/rejsedch.png","x":"130","y":"600","size":"200","center":true}],"text":"Dies ist ein Beispiel Text von FactCraft.","textSize":"40","textOffset":"260","img":"http://bangkok.stickyrice.co/wp-content/uploads/2013/04/triforce-wallpaper-700x700.jpg"}';
+	var json = {elements: []};
+
+	$(document).ready(function() {
+		window.addEventListener('resize', resizeWindow);
+		//window.addEventListener('keydown', moveSelection);
+
+		$("#element-config-imgurl,#element-config-x,#element-config-y,#element-config-size,#element-config-center").on('change keydown paste input', function(){
+		 update();
+		});
+		$("#content").on('change keydown paste input', function(){
+		 update();
+		});
+		$("#backgroundimg,#content-offset").on('change keydown paste input', function(){
+		 update();
+		});
+		$('.slider-font-size').slider()
+		$('.slider-font-size').slider()
+	  .on('slide', function(ev){
+	    document.getElementById("font-size").innerHTML = ev.value;
+			update();
+	  });
+		if(getCookie("json") === null){
+			json = JSON.parse(raw);
+		}else{
+			json = JSON.parse(getCookie("json"));
+
+		}
+		loadFromCookie();
+		//Correcting
+		update();
+	});
+	function resizeWindow(){
+		update();
+	}
+
+	function loadFromCookie(){
+		updateElements();
+		document.getElementById("content").value = json.text;
+		$('.slider-font-size').slider('setValue', json.textSize);
+		document.getElementById("font-size").innerHTML = json.textSize;
+		document.getElementById("content-offset").value = json.textOffset;
+		document.getElementById("backgroundimg").value = json.img;
+	}
+	function updateElements(){
+		console.log(json);
+		var html = '';
+		for(var i = 0; i < json.elements.length; i++){
+			var obj = json.elements[i];
+			var line = "<option value=\"" + obj.id + "\">Element " + obj.id + "</option>";
+			html += line;
+		}
+		document.getElementById("elements").innerHTML = html;
+	}
+	var editingElementID = -1;
+	function onInteractElementList(el){
+		var id = el.value;
+		if(editingElementID != id){
+			editingElementID = id;
+			document.getElementById("panel3").style.display = "block";
+			document.getElementById("panel-heading-config").innerHTML = "Einstellungen von Element " + id;
+			updateElementConfig(id);
+		}
+	}
+	function getElementJsonByID(id){
+		var res;
+		json.elements.forEach(function(result, index) {
+			if(result['id'] === parseInt(id)) {
+				console.log(result);
+				res = result;
+			}
+		});
+		return res;
+	}
+	function updateElementConfig(id){
+		//console.log(getElementJsonByID(id));
+		document.getElementById("element-config-imgurl").value = getElementJsonByID(id).img;
+		document.getElementById("element-config-x").value = getElementJsonByID(id).x;
+		document.getElementById("element-config-y").value = getElementJsonByID(id).y;
+		document.getElementById("element-config-size").value = getElementJsonByID(id).size;
+	}
+	function findAndRemove(array, property, value) {
+  	array.forEach(function(result, index) {
+	    if(result[property] === value) {
+	      //Remove from array
+	      array.splice(index, 1);
+	    }
+  	});
+	}
+	function removeElement(){
+		var el = document.getElementById("elements");
+		var id = el.value;
+		console.log(id);
+		for(var i = 0; i < json.elements.length; i++){
+			var obj = json.elements[i];
+			if(parseInt(obj.id) === parseInt(id)){
+				if(document.getElementById("element"+obj.id) != undefined){
+					document.getElementById("element"+obj.id).remove();
+				}
+				findAndRemove(json.elements, 'id', parseInt(id));
+
+				console.log(json);
+				updateElements();
+				update();
+				return;
+			}
+		}
+
+	}
+	function addElement(){
+		var index = json.elements.length + 1;
+		json.elements.push({"id": index, "img": "http://fs5.directupload.net/images/161207/fvrvltc5.png", "x":"20", "y":"20", "size":"200", "center":false});
+		updateElements();
+		update();
+	}
+	function getCookie(c_name) {
+	    return localStorage.getItem(c_name);
+	}
+
+	function setCookie(c_name, value, expiredays) {
+	    return localStorage.setItem(c_name, value);
+	}
+	//On value change
+  function update(){
+		//Set cookie
+		document.getElementById("pattern").style.left = document.getElementById("background").offsetLeft;
+		document.getElementById("realtext").innerHTML = document.getElementById("content").value;
+		json.text = document.getElementById("content").value;
+		document.getElementsByTagName("h1")[0].style.paddingTop = document.getElementById("content-offset").value;
+		document.getElementById("background").style.backgroundImage = "url(\"" + document.getElementById("backgroundimg").value + "\")";
+		document.getElementsByTagName("h1")[0].style.fontSize = document.getElementById("font-size").innerHTML + "pt";
+
+		json.img = document.getElementById("backgroundimg").value;
+		json.textSize = document.getElementById("font-size").innerHTML;
+		json.textOffset = document.getElementById("content-offset").value;
+
+		if(json.elements.length > 0 && editingElementID != -1 && getElementJsonByID(editingElementID) != undefined){
+			getElementJsonByID(editingElementID).img = document.getElementById("element-config-imgurl").value;
+			getElementJsonByID(editingElementID).x = document.getElementById("element-config-x").value;
+			getElementJsonByID(editingElementID).y = document.getElementById("element-config-y").value;
+			getElementJsonByID(editingElementID).size = document.getElementById("element-config-size").value;
+			getElementJsonByID(editingElementID).center = document.getElementById("element-config-center").checked;
+		}
+		//Render or update elements
+		for(var i = 0; i < json.elements.length; i++){
+			var el = json.elements[i];
+			var img = new Image();
+			if(document.getElementById("element"+el.id) == undefined){
+				document.getElementById("background").appendChild(img);
+			}else{
+				var img = document.getElementById("element"+el.id);
+			}
+			img.id = "element"+el.id;
+			img.src = el.img;
+			img.style.width = el.size;
+			img.style.height = "auto";
+			img.style.marginTop = el.y;
+			if(!el.center){
+				img.style.marginLeft = el.x;
+			}else{
+				img.style.marginLeft = 350 - (parseInt(el.size) / 2);
+			}
+			img.style.position = "absolute";
+		}
+		setCookie("json", JSON.stringify(json), 365*10);
+
+	}
+	function save(){
+		toCanvas();
+	}
+	function open(canvas){
+		document.getElementById("panel2-body").appendChild(canvas);
+	}
+	function toCanvas(){
+		var data;
+		html2canvas(document.getElementById("background"), {
+					"logging": true,
+                    onrendered: function(canvas){
+						open(canvas);
+
+                    },
+                    width: 700,
+                    allowTaint: true,
+                    taintTest: false
+                });
+	}
+		var x = 0;
+		var y = 0;
+		var steps = 5;
+		function leftArrowPressed() {
+            var element = document.getElementById("background");
+            x = x - steps;
+            element.style.backgroundPosition = x + 'px ' + y + 'px';
+            }
+
+            function rightArrowPressed() {
+            var element = document.getElementById("background");
+            x = x + steps;
+            element.style.backgroundPosition = x + 'px ' + y + 'px';
+
+            }
+
+            function upArrowPressed() {
+            var element = document.getElementById("background");
+            y = y - steps;
+            element.style.backgroundPosition = x + 'px ' + y + 'px';
+            }
+
+            function downArrowPressed() {
+            var element = document.getElementById("background");
+            y = y + steps;
+            element.style.backgroundPosition = x + 'px ' + y + 'px';
+		}
+		function moveSelection(evt) {
+		switch (evt.keyCode) {
+			case 37:
+			leftArrowPressed();
+			break;
+			case 39:
+			rightArrowPressed();
+			break;
+			case 38:
+			upArrowPressed();
+			break;
+			case 40:
+			downArrowPressed();
+			break;
+			}
+		};
+
+	</script>
+</head>
+<body>
+<div id="panel-container">
+	<div id="panel" class="panel panel-default">
+		<div class="panel-heading">Einstellungen</div>
+			<div id="panel-body" class="panel-body-config">
+				<h3>Allgemein:</h3>
+				<form>
+					<div class="input-group">
+						<span class="input-group-addon" id="backgroundimgs">Hintergrund-URL</span>
+						<input type="text" id="backgroundimg" class="form-control" value="http://i.imgur.com/RRUe0Mo.png" aria-describedby="backgroundimgs">
+				  </div><br>
+					<div class="input-group">
+						<span class="input-group-addon" id="contents">Text</span>
+						<input type="text" id="content" class="form-control" value="Dies ist ein kleiner Beispieltext, welcher verändert werden kann." aria-describedby="contents">
+					</div><br>
+					Schriftgröße:<br><input type="text" class="slider-font-size" value="" data-slider-min="6" data-slider-max="80" data-slider-step="1" data-slider-value="40" data-slider-orientation="horizontal" data-slider-selection="before"data-slider-tooltip="hide">
+				  <span id="font-size">40</span><br>
+					<div class="input-group input-group-sm">
+						<span class="input-group-addon" id="sizing-addon3">Textabstand</span>
+						<input id="content-offset" type="number" style="width:100px;" class="form-control" min="0" max="700" step="1" value="100">
+					</div><br>
+				</form>
+				<form>
+				  <h3>Elemente (Logos etc.):</h3>
+				  <select id="elements" name="elements" size="5" onchange="onInteractElementList(this)">
+				  </select><br>
+					<button type="button" id="add" class="btn btn-info" onClick="addElement()">+</button>
+					<button type="button" id="remove" class="btn btn-danger" onClick="removeElement()">-</button>
+				</form>
+				<button type="button" id="gen" onClick="save()" class="btn btn-success">Bild erzeugen!</button>
+			</div>
+
+		</div>
+		<div id="panel3" class="panel panel-default" style="display:none">
+			<div class="panel-heading" id="panel-heading-config">Element-Einstellungen</div>
+				<div id="panel3-body" class="panel-body-config">
+					<div class="input-group input-group-sm">
+						<span class="input-group-addon" id="sizing-addon3">Bild-URL</span>
+						<input id="element-config-imgurl" type="text" class="form-control" placeholder="http://" aria-describedby="sizing-addon3">
+					</div>
+					<div class="input-group input-group-sm">
+						<span class="input-group-addon" id="sizing-addon3">Größe</span>
+						<input id="element-config-size" type="number" style="width:100px;" class="form-control" min="0" max="700" step="1" value="200">
+					</div>
+					<div class="input-group input-group-sm">
+						<span class="input-group-addon" id="sizing-addon3">X</span>
+						<input id="element-config-x" type="number" style="width:100px;" class="form-control" min="0" max="700" step="1" value="50">
+					</div>
+					<div class="input-group input-group-sm">
+						<span class="input-group-addon" id="sizing-addon3">Y</span>
+						<input id="element-config-y" type="number" style="width:100px;" class="form-control" min="0" max="700" step="1" value="50">
+					</div>
+					<div class="input-group input-group-sm">
+						<span class="input-group-addon" id="sizing-addon3">mittig</span>
+						<input type="checkbox" id="element-config-center" aria-label="...">
+					</div>
+				</div>
+		</div>
+	</div>
+</div>
+	<div id="container">
+	<div id="pattern" class="pattern">
+	</div>
+		<div id="background" class="background">
+			<h1><span id="realtext">Dies ist ein kleiner Beispieltext, welcher verändert werden kann.</span></h1>
+		</div>
+	</div>
+	<div id="panel2" class="panel panel-default">
+		<div class="panel-heading">Exportierte Bilder</div>
+			<div id="panel2-body" class="panel-body-config">
+
+			</div>
+		</div>
+</div>
+<style>
+@font-face {
+font-family: outline;
+src: url("outline/Mouser_Outline.ttf") format("truetype");
+}
+body{
+	background-color: #F0F0F0;
+	padding: 50px;
+}
+
+#font-size{
+	width: 40px;
+}
+#elements{
+	width: 100px;
+}
+#panel-container{
+	position: absolute;
+	width: 350px;
+}
+#panel2{
+	position: relative;
+	margin-top: 100px;
+}
+#panel2-body{
+	position: relative;
+}
+#panel-body{
+	padding: 10px;
+}
+#panel{
+	float: left;
+}
+#panel3{
+	position: relative;
+	width: 350px;
+	float: left;
+}
+#panel3-body{
+	padding: 10px;
+}
+.content{
+	width: 100%;
+}
+#container{
+
+}
+.pattern {
+	background-image: url("img/stripe_1.png");
+	width: 700px;
+	height: 700px;
+	position:absolute;
+	left: 600px;
+}
+.background {
+	margin: auto;
+	z-index: -1;
+	-webkit-filter:  brightness(1.3);
+	background-image: url("http://i.imgur.com/RRUe0Mo.png");
+	background-repeat:no-repeat;
+	background-size: auto 700px;
+	width: 700px;
+	height: 700px;
+	color: black;
+}
+h1 {
+		width: 700px;
+		height: 700px;
+		position: absolute;
+		padding: 50px;
+		text-align: center;
+    font-size: 40pt;
+    font-family: sans-serif;
+    color: white;
+    text-shadow:  1px  1px 1px black,
+                  1px -2px 1px black,
+                 -1px  2px 2px black,
+                 -1px -2px 2px black;
+	-webkit-font-smoothing: antialiased;
+}
+
+</style>
+</div>
+<br>
+</body>
+</html>
